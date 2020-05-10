@@ -1,0 +1,136 @@
+<html>
+    <head>
+        <title>File 1</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <style>
+            body{
+                margin: 25px;
+            }
+
+            #place{
+                width: 500px;
+                height: 25px;
+                margin: 10px 0 10px 0;
+            }
+
+            #map{
+                background-color: #e7e9e8;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <input type="text" id="place" autofocus>
+        <div class="row">
+            <div class="col-lg-6">
+
+            </div>
+            <div class="col-lg-6" id="map">
+
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <script>
+            function initGoogleMap(){
+
+                // Bind html input control with google map, this enable autocomplete
+                var placeInput = document.getElementById('place'); // Get the html element by id 
+                var autocomplete = new google.maps.places.Autocomplete(placeInput); // Bind it with Google Map Api which enables autocomplete
+                
+                var map;
+                var infowindows = [] ;
+                var markers = [] ;
+                //var infowindow = new google.maps.InfoWindow();
+                var allPorts = 
+                [
+                    ['Palma',39.5696005,2.650160300000038], // 3x3
+                    ['Ibiza',38.9067339,1.420598299999937],
+                    ['Menorca',39.99911629999999,3.838904700000057]
+                ];
+
+                //When user selects a prediction,'places_changed' event is fired.
+                autocomplete.addListener('place_changed', function(){
+                    //var bounds = new google.maps.LatLngBounds();
+
+                    var place = autocomplete.getPlace(); 
+
+                    //Testing map generation : Setting enter as searched place
+                    var center = new google.maps.LatLng(place.geometry.location.lat(),place.geometry.location.lng());
+                     map = new google.maps.Map(document.getElementById('map'), {
+                        mapTypeId: 'roadmap',
+                        center: center,
+                        zoom: 7
+                    });
+
+                    // Clear out the old markers(if any) on each new search
+                        markers.forEach(function (marker) {
+                        marker.setMap(null);
+                    });
+                    markers = [];
+                    var locationArr =[] ;
+                    var viewport = place.geometry.viewport; //Google api gives southwest & northeast point of a location. So generating other two points is easy
+
+                    var boundPolygon = new google.maps.Polygon({    //building a polygon using those points
+                        paths: [
+                                new google.maps.LatLng(viewport.f.b, viewport.b.b),
+                                new google.maps.LatLng(viewport.f.b, viewport.b.f),
+                                new google.maps.LatLng(viewport.f.f, viewport.b.f),
+                                new google.maps.LatLng(viewport.f.f, viewport.b.b)
+                            ],
+                            // strokeColor: '#FF0000',
+                            // strokeOpacity: 0.8,
+                            // strokeWeight: 2,
+                            // fillColor: '#FF0000',
+                            // fillOpacity: 0.35
+                    });
+
+                    for (let index = 0; index < allPorts.length; index++) {
+                        let locationName = allPorts[index][0];
+                        let pointToCheck = new google.maps.LatLng(allPorts[index][1],allPorts[index][2]);
+                        var pointExists = google.maps.geometry.poly.containsLocation(pointToCheck, boundPolygon);
+                        if(pointExists){
+                            let tempArr = [locationName,allPorts[index][1],allPorts[index][2]];
+                            locationArr.push(tempArr);
+                        }
+                        
+                    }
+                    
+
+                    //Pushing the marker to the selected point of the map  
+                    for (let index = 0; index < locationArr.length; index++) {                       
+                        markers.push(new google.maps.Marker({
+                            map: map,       
+                            position: new google.maps.LatLng(locationArr[index][1],locationArr[index][2])//place.geometry.location
+                        }));
+
+                        infowindows.push(new google.maps.InfoWindow({
+                            content: locationArr[index][0]
+                        }));
+
+                        markers[index].addListener('click' , function(){
+                            infowindows[index].open(map,markers[index]);
+                        });
+                        
+                    }             
+
+                });
+            }
+
+            // viewport:
+            // b.b => southwest.long
+            // b.f => northeast.long
+            // f.b => southwest.lat
+            // f.f => northeast.lat
+        </script>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAPumJupDAZ4_d_Vqna_Vz-tcZWzURkSCg&libraries=places,geometry&callback=initGoogleMap"
+        async defer></script>
+</script>
+    </body>
+</html>
+
+<!--
+First you need to get an API Key from here : https://developers.google.com/maps/documentation/javascript/get-api-key
+-->
