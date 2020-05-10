@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <title>File 1</title>
+        <style>
+            body{
+                margin: 25px;
+            }
+
+            #place{
+                width: 500px;
+                height: 25px;
+                margin: 10px 0 10px 0;
+            }
+
+            #map{
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <input type="text" id="place" autofocus>
+        <div id="map">
+
+        </div>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <script>
+            function initGoogleMap(){
+                var map = new google.maps.Map(document.getElementById('map'), {
+                    mapTypeId: 'roadmap',
+                    center: { lat: 23.811396, lng: 90.411824 },
+                    zoom: 15
+                });
+
+                // Bind html input control with google map, this enable autocomplete
+                var placeInput = document.getElementById('place'); // Get the html element by id 
+                var searchBox = new google.maps.places.SearchBox(placeInput); // Bind it with Google Map Api which enables autocomplete
+
+                var markers = [];
+
+                //When user selects a prediction,'places_changed' event is fired.
+                searchBox.addListener('places_changed', function(){
+                    var bounds = new google.maps.LatLngBounds();
+
+                    var places = searchBox.getPlaces(); // getPlaces() on searcBox objects retireves an array of predictions along with more details of that place
+                    //console.log(places);
+
+                    var place = places[0];  // Typically selected place is placed on 0th position of the array.
+
+                    // Clear out the old markers(if any) on each new search
+                    markers.forEach(function (marker) {
+                        marker.setMap(null);
+                    });
+                    markers = [];
+
+                    //Pushing the marker to the selected point of the map               
+                    markers.push(new google.maps.Marker({
+                        map: map,       
+                        position: place.geometry.location
+                    }));
+
+                    if (place.geometry.viewport) {
+                        // Only geocodes have viewport.
+                        bounds.union(place.geometry.viewport);
+                    } 
+                    else {
+                        bounds.extend(place.geometry.location);
+                    }
+
+                    map.fitBounds(bounds);
+
+                    
+                    //Highlighing the searched area
+                    var viewport = place.geometry.viewport; //Google api gives southwest & northeast point of a location. So generating other two points is easy
+
+                    var boundPolygon = new google.maps.Polygon({    //building a polygon using those points
+                        paths: [
+                                new google.maps.LatLng(viewport.f.b, viewport.b.b),
+                                new google.maps.LatLng(viewport.f.b, viewport.b.f),
+                                new google.maps.LatLng(viewport.f.f, viewport.b.f),
+                                new google.maps.LatLng(viewport.f.f, viewport.b.b)
+                            ],
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.35
+                    });
+
+                    boundPolygon.setMap(map);   // showing the polygon on Map
+                });
+            }
+
+            // viewport:
+            // b.b => southwest.long
+            // b.f => northeast.long
+            // f.b => southwest.lat
+            // f.f => northeast.lat
+
+            // var pointToCheck = new google.maps.LatLng(23.810251, 90.412525); //Dhanmondi, Dhaka, Dhaka Division, Bangladesh
+            // var pointExists = google.maps.geometry.poly.containsLocation(pointToCheck, boundArea);
+        </script>
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAPumJupDAZ4_d_Vqna_Vz-tcZWzURkSCg&libraries=places&callback=initGoogleMap"
+        async defer></script>
+</script>
+    </body>
+</html>
+
+<!--
+First you need to get an API Key from here : https://developers.google.com/maps/documentation/javascript/get-api-key
+-->
